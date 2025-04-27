@@ -1,17 +1,15 @@
 import mongoose, { Schema } from 'mongoose'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
 import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
+// import { UserRoles, UserStatus } from '../../../my projects/messaging/backend/src/constants'
 
 const userSchema = new Schema(
     {
-        username: {
+        fullName: {
             type: String,
             required: true,
-            unique: true,
-            lowercase: true,
-            trim: true,
             index: true,
         },
         email: {
@@ -21,20 +19,45 @@ const userSchema = new Schema(
             lowercase: true,
             trim: true,
         },
-        fullName: {
-            type: String,
-            required: true,
-            lowercase: true,
-            index: true,
-        },
         password: {
             type: String,
             required: [true, 'Password is required!'],
+            minlength: [8, 'Password must be at least 8 characters'],
+        },
+        gender: {
+            type: String,
+            enum: ['male', 'female', 'other'],
+            required: true,
+            default: 'male',
+        },
+        // role: {
+        //     enum: Object.values(UserRoles),
+        //     default: UserRoles.CLIENT,
+        // },
+        // status: {
+        //     enum: Object.values(UserStatus),
+        //     default: UserStatus.ACTIVE,
+        // },
+        bio: {
+            type: String,
+            required: true,
+        },
+        experience: {
+            type: String,
+            required: true,
+        },
+        specialities: {
+            type: String,
+            required: true,
+        },
+        reason: {
+            type: String,
+            required: true,
         },
         refreshToken: {
             type: String,
         },
-        avatar: {
+        profilePhoto: {
             type: String, // cloudinary url
             required: true,
         },
@@ -46,7 +69,7 @@ const userSchema = new Schema(
 
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next()
-    this.password.bcrypt.hash(this.password, 10)
+    this.password = await bcrypt.hash(this.password, 10)
     next()
 })
 
@@ -82,4 +105,4 @@ userSchema.methods.generateRefreshToken = function () {
 
 userSchema.plugin(mongooseAggregatePaginate)
 
-export const user = mongoose.model('User', userSchema)
+export const User = mongoose.model('User', userSchema)
