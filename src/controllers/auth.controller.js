@@ -7,8 +7,8 @@ import { ApiResponse } from '../utills/ApiResponce.js'
 const generateAccessTokenAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId)
-        const accessToken = user.generateAccessToken
-        const refreshToken = user.generateRefreshToken
+        const accessToken = user.generateAccessToken()
+        const refreshToken = user.generateRefreshToken()
 
         user.refreshToken = refreshToken
         user.save({ validateBeforeSave: false })
@@ -62,7 +62,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // create user
-    const user = User.create({
+    const user = await User.create({
         fullName,
         email,
         password,
@@ -120,7 +120,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const { refreshToken, accessToken } =
         await generateAccessTokenAndRefreshToken(user._id)
 
-    const loggedInUser = User.findById(user._id).select(
+    const loggedInUser = await User.findById(user._id).select(
         '-password -refreshToken'
     )
 
@@ -146,4 +146,29 @@ const loginUser = asyncHandler(async (req, res) => {
         )
 })
 
-export { registerUser }
+const logoutUser = asyncHandler(async (req, res) => {
+    await User.findByIdAndUpdate(
+        req.user._id,
+
+        {
+            $set: {
+                refreshToken: undefined,
+            },
+        },
+        {
+            new: true,
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true,
+    }
+
+    res.status(200)
+        .clearCookie('accessToken', options)
+        .clearCookie('refreshToken', options)
+        .json(200, {}, 'User logged out successfully')
+})
+
+export { registerUser, loginUser, logoutUser }
