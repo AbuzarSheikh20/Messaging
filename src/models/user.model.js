@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
 import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
-// import { UserRoles, UserStatus } from '../../../my projects/messaging/backend/src/constants'
+import { UserStatus, UserRoles } from '../constants.js'
 
 const userSchema = new Schema(
     {
@@ -31,28 +31,38 @@ const userSchema = new Schema(
             default: 'male',
         },
         role: {
+            type: String,
             enum: Object.values(UserRoles),
             default: UserRoles.CLIENT,
         },
         status: {
+            type: String,
             enum: Object.values(UserStatus),
             default: UserStatus.ACTIVE,
         },
         bio: {
             type: String,
-            required: true,
+            required: function () {
+                return this.role === UserRoles.MOTIVATOR
+            },
         },
         experience: {
             type: String,
-            required: true,
+            required: function () {
+                return this.role === UserRoles.MOTIVATOR
+            },
         },
         specialities: {
             type: String,
-            required: true,
+            required: function () {
+                return this.role === UserRoles.MOTIVATOR
+            },
         },
         reason: {
             type: String,
-            required: true,
+            required: function () {
+                return this.role === UserRoles.MOTIVATOR
+            },
         },
         refreshToken: {
             type: String,

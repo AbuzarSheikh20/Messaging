@@ -1,32 +1,25 @@
 export const DB_NAME = 'messagingApp'
 
-const UserRoles = {
+export const UserRoles = {
     ADMIN: 'admin',
     MOTIVATOR: 'motivator',
     CLIENT: 'client',
 }
 
-const UserStatus = {
-    ACTIVE: '',
-    INACTIVE: '',
-    PENDING: '',
+export const UserStatus = {
+    ACTIVE: 'active',
+    INACTIVE: 'inactive',
+    PENDING: 'pending',
 }
 
-const MessageStatus = {
+export const MessageStatus = {
     NEW: 'new',
     RESPONDED: 'responded',
     ACHIEVED: 'achieved',
 }
 
-const ResponseTypes = {
+export const ResponseTypes = {
     TEXT: '',
     AUDIO: '',
     VIDEO: '',
-}
-
-module.exports = {
-    UserRoles,
-    UserStatus,
-    MessageStatus,
-    ResponseTypes,
 }

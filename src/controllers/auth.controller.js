@@ -44,7 +44,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // check for images
     const profilePhotoLocalPath = req.file?.path
-    console.log('profilePhoto Path', profilePhotoLocalPath)
 
     if (!profilePhotoLocalPath) {
         throw new ApiError(404, 'Profile Photo is not found')
@@ -80,6 +79,11 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(500, 'Something went wrong while creating account')
     }
 
+    const options = {
+        httpOnly: true,
+        secure: true,
+    }
+
     // return res
     return res
         .status(201)
@@ -112,7 +116,6 @@ const registerMotivator = asyncHandler(async (req, res) => {
 
     // check for images
     const profilePhotoLocalPath = req.file?.path
-    console.log('profilePhoto Path', profilePhotoLocalPath)
 
     if (!profilePhotoLocalPath) {
         throw new ApiError(404, 'Profile Photo is not found')
@@ -151,6 +154,11 @@ const registerMotivator = asyncHandler(async (req, res) => {
     // check for user creation
     if (!createdUser) {
         throw new ApiError(500, 'Something went wrong while creating account')
+    }
+
+    const options = {
+        httpOnly: true,
+        secure: true,
     }
 
     // return res
@@ -316,7 +324,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'All fields are required')
     }
 
-    const user = User.findById(req.user?._id)
+    const user = await User.findById(req.user?._id)
 
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
     if (!isPasswordCorrect) {
@@ -324,7 +332,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     }
 
     user.password = newPassword
-    user.save({ validateBeforeSave: false })
+    await user.save({ validateBeforeSave: false })
 
     return res
         .status(200)
@@ -332,11 +340,10 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 })
 
 const updateUserDetails = asyncHandler(async (req, res) => {
-    const { fullName, email } = req.body
-
-    if (!fullName || !email) {
-        throw new ApiError(400, 'All fields are required')
+    if (!req.body) {
+        throw new ApiError(400, 'Request body is missing')
     }
+    const { fullName, email } = req.body
 
     const updateData = {}
 
@@ -347,12 +354,12 @@ const updateUserDetails = asyncHandler(async (req, res) => {
         updateData.email = email
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: updateData,
         },
-        { new: true }
+        { new: true, runValidators: true }
     ).select('-password')
 
     return res
@@ -363,7 +370,7 @@ const updateUserDetails = asyncHandler(async (req, res) => {
 const updateProfilePhoto = asyncHandler(async (req, res) => {
     const profilePhotoLocalPath = req.file?.path
     if (!profilePhotoLocalPath) {
-        throw new ApiError(400, 'ProfilePhoto file is missing')
+        throw new ApiError(400, 'File is missing')
     }
 
     const user = await User.findById(req.user?._id)
