@@ -30,14 +30,14 @@ const userSchema = new Schema(
             required: true,
             default: 'male',
         },
-        // role: {
-        //     enum: Object.values(UserRoles),
-        //     default: UserRoles.CLIENT,
-        // },
-        // status: {
-        //     enum: Object.values(UserStatus),
-        //     default: UserStatus.ACTIVE,
-        // },
+        role: {
+            enum: Object.values(UserRoles),
+            default: UserRoles.CLIENT,
+        },
+        status: {
+            enum: Object.values(UserStatus),
+            default: UserStatus.ACTIVE,
+        },
         bio: {
             type: String,
             required: true,

@@ -1,9 +1,13 @@
 import { asyncHandler } from '../utills/asyncHandler.js'
 import { ApiError } from '../utills/ApiError.js'
-import { User } from '../models/user.model.js'
-import { uploadOnCloudinary } from '../utills/cloudinary.js'
 import { ApiResponse } from '../utills/ApiResponce.js'
+import { User } from '../models/user.model.js'
+import {
+    uploadOnCloudinary,
+    deleteFromCloudinanry,
+} from '../utills/cloudinary.js'
 import jwt from 'jsonwebtoken'
+import { UserStatus, UserRoles } from '../constants.js'
 
 const generateAccessTokenAndRefreshToken = async (userId) => {
     try {
@@ -25,16 +29,75 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
     // get user detail
-    const {
-        profilePhoto,
-        gender,
+    const { gender, fullName, email, password } = req.body
+
+    // validation - not empty
+    if ([email, password, gender].some((field) => field?.trim() === '')) {
+        throw new ApiError(400, 'Required fileds are empty')
+    }
+
+    // existence of user - email
+    const existedUser = await User.findOne({ email })
+    if (existedUser) {
+        throw new ApiError(409, 'User already Exists')
+    }
+
+    // check for images
+    const profilePhotoLocalPath = req.file?.path
+    console.log('profilePhoto Path', profilePhotoLocalPath)
+
+    if (!profilePhotoLocalPath) {
+        throw new ApiError(404, 'Profile Photo is not found')
+    }
+
+    // upload on cloudinary
+    const uploadedImage = await uploadOnCloudinary(profilePhotoLocalPath)
+
+    if (!uploadedImage) {
+        throw new ApiError(404, 'Profile photo is required')
+    }
+
+    // create user
+    const user = await User.create({
         fullName,
         email,
         password,
-        reason,
-        experience,
-        specialities,
-    } = req.body
+        profilePhoto: uploadedImage.url,
+        gender,
+    })
+
+    // generate tokens
+    const { accessToken, refreshToken } =
+        await generateAccessTokenAndRefreshToken(user._id)
+
+    // rem pswd & ref token field from responce
+    const createdUser = await User.findById(user._id).select(
+        '-password -refreshToken'
+    )
+
+    // check for user creation
+    if (!createdUser) {
+        throw new ApiError(500, 'Something went wrong while creating account')
+    }
+
+    // return res
+    return res
+        .status(201)
+        .cookie('accessToken', accessToken, options)
+        .cookie('refreshToken', refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                createdUser,
+                accessToken,
+                'User registered succesfully'
+            )
+        )
+})
+
+const registerMotivator = asyncHandler(async (req, res) => {
+    // get user detail
+    const { gender, fullName, email, password } = req.body
 
     // validation - not empty
     if ([email, password, gender].some((field) => field?.trim() === '')) {
@@ -73,7 +136,12 @@ const registerUser = asyncHandler(async (req, res) => {
         experience: req.body.experience || 'No experience provided',
         specialities: req.body.specialities || 'No specialities provided',
         reason: req.body.reason || 'No reason provided',
+        role: UserRoles.MOTIVATOR,
+        status: UserStatus.PENDING,
     })
+
+    const { accessToken, refreshToken } =
+        await generateAccessTokenAndRefreshToken(user._id)
 
     // rem pswd & ref token field from responce
     const createdUser = await User.findById(user._id).select(
@@ -88,7 +156,16 @@ const registerUser = asyncHandler(async (req, res) => {
     // return res
     return res
         .status(201)
-        .json(new ApiResponse(200, createdUser, 'User registered succesfully'))
+        .cookie('accessToken', accessToken, options)
+        .cookie('refreshToken', refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                createdUser,
+                accessToken,
+                'Motivator registered succesfully and pending approval'
+            )
+        )
 })
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -116,6 +193,17 @@ const loginUser = asyncHandler(async (req, res) => {
 
     if (!isPasswordValid) {
         throw new ApiError(404, 'Invalid user credentials')
+    }
+
+    if (user.status === UserStatus.INACTIVE) {
+        throw new ApiError(403, 'Your account is deactivated')
+    }
+
+    if (
+        user.role === UserRoles.MOTIVATOR &&
+        user.status === UserStatus.PENDING
+    ) {
+        throw new ApiError(403, 'Your motivator account is in pending approval')
     }
 
     const { refreshToken, accessToken } =
@@ -224,6 +312,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 const changeCurrentPassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body
 
+    if (!oldPassword || !newPassword) {
+        throw new ApiError(400, 'All fields are required')
+    }
+
     const user = User.findById(req.user?._id)
 
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
@@ -258,9 +350,7 @@ const updateUserDetails = asyncHandler(async (req, res) => {
     const user = User.findByIdAndUpdate(
         req.user?._id,
         {
-            $set: {
-                updateData,
-            },
+            $set: updateData,
         },
         { new: true }
     ).select('-password')
@@ -274,6 +364,16 @@ const updateProfilePhoto = asyncHandler(async (req, res) => {
     const profilePhotoLocalPath = req.file?.path
     if (!profilePhotoLocalPath) {
         throw new ApiError(400, 'ProfilePhoto file is missing')
+    }
+
+    const user = await User.findById(req.user?._id)
+
+    if (!user) {
+        throw new ApiError(400, 'User not found')
+    }
+
+    if (user.profilePhoto) {
+        await deleteFromCloudinanry(user.profilePhoto)
     }
 
     const profilePhoto = await uploadOnCloudinary(profilePhotoLocalPath)
@@ -299,6 +399,7 @@ const updateProfilePhoto = asyncHandler(async (req, res) => {
 
 export {
     registerUser,
+    registerMotivator,
     loginUser,
     logoutUser,
     refreshAccessToken,

@@ -13,7 +13,7 @@ const uploadOnCloudinary = async (localFilePath) => {
             resource_type: 'auto',
         })
 
-        fs.unlinkSync(localFilePath)   // After using Postman, If file is uploading successfulyy then uncomment
+        fs.unlinkSync(localFilePath) // After using Postman, If file is uploading successfulyy then uncomment
         // console.log('File is Uploaded on Cloudinary', response.url)
         return response
     } catch (error) {
@@ -22,4 +22,19 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-export { uploadOnCloudinary }
+const deleteFromCloudinanry = async (fileUrl) => {
+    try {
+        if (!fileUrl) {
+            return null
+        }
+
+        const publicId = fileUrl.split('/').slice(-1)[0].split('.')[0]
+
+        const responce = await cloudinary.uploader.destroy(publicId)
+        return responce
+    } catch (error) {
+        return null
+    }
+}
+
+export { uploadOnCloudinary, deleteFromCloudinanry }
