@@ -11,12 +11,14 @@ const userSchema = new Schema(
             type: String,
             required: true,
             index: true,
+            trim: true,
         },
         email: {
             type: String,
             required: true,
             unique: true,
             lowercase: true,
+            trim: true,
             trim: true,
         },
         password: {
@@ -26,7 +28,7 @@ const userSchema = new Schema(
         },
         gender: {
             type: String,
-            enum: ['male', 'female', 'other'],
+            enum: ['male', 'female', 'other'],   // enum is only valid with 'Number', 'String'
             required: true,
             default: 'male',
         },

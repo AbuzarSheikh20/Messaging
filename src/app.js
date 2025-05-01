@@ -19,15 +19,12 @@ app.use(
 app.use(express.static('public'))
 app.use(cookieParser())
 
-
-
 // Import routers
 import authRoutes from './routes/auth.routes.js'
+import userRoutes from './routes/user.route.js'
 
 // routes declaration
-app.use('/api/v1/users', authRoutes)
-
-
-
+app.use('/api/v1/auth', authRoutes)
+app.use('/api/v1/users', userRoutes)
 
 export { app }
