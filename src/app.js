@@ -22,9 +22,20 @@ app.use(cookieParser())
 // Import routers
 import authRoutes from './routes/auth.routes.js'
 import userRoutes from './routes/user.route.js'
+import messagesRoutes from './routes/message.routes.js'
+import responsesRoutes from './routes/response.routes.js'
 
 // routes declaration
 app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/users', userRoutes)
+app.use('/api/v1/messages', messagesRoutes)
+app.use('/api/v1/responses', responsesRoutes)
+
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Routes not found',
+    })
+})
 
 export { app }

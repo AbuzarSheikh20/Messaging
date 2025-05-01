@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import MessageStatus from '../constants.js'
+import {MessageStatus} from '../constants.js'
 
 const messageSchema = new mongoose.Schema(
     {
@@ -54,4 +54,4 @@ messageSchema.pre('save', function (next) {
     }
     next()
 })
-export const message = mongoose.model('Message', messageSchema)
+export const Message = mongoose.model('Message', messageSchema)

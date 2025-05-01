@@ -25,4 +25,4 @@ const responseSchema = new mongoose.Schema(
     { timestamps: true }
 )
 
-export const response = mongoose.model('Response', responseSchema)
+export const Response = mongoose.model('Response', responseSchema)
